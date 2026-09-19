@@ -1,0 +1,19 @@
+version: 1
+sources:
+  - source_id: incred_personal
+    url: https://incred.com/personal-loan/
+    source_type: official_product
+    allowed_hosts: [incred.com, www.incred.com, assets.incred.com]
+    format: html
+    terms_checked_at: null
+    collection_notes: Candidate public product page; review terms before collection.
+mappings:
+  - mapping_id: incred_pl_official
+    product_id: incred_pl
+    source_id: incred_personal
+    role: lender
+    scope: unknown
+    review_state: candidate
+    confidence: 0
+    rationale: Official product candidate; ClickPe channel applicability requires review.
+
