@@ -1,0 +1,27 @@
+scraping:
+  request_delay: 2.0
+  max_retries: 3
+  connect_timeout: 5
+  read_timeout: 30
+  max_bytes: 10485760
+  max_pages_per_host: 10
+  user_agent: ClickPePIM/0.1 (+public-research; respectful-collector)
+monitoring:
+  stale_days: 30
+  confirm_absence_hours: 24
+  required_absence_observations: 2
+  maximum_comparison_age_days: 30
+  maximum_pair_skew_days: 7
+completeness:
+  weights: {lender: 0.20, interest: 0.20, amount: 0.15, fees: 0.15, tenure: 0.10, eligibility: 0.10, repayment: 0.05, documents: 0.05}
+comparison:
+  amount_tolerance_inr: 1
+  rate_tolerance_percentage_points: 0.01
+  approximate_tenure_tolerance_days: 1
+  minimum_mapping_confidence: 0.8
+  high_priority_threshold: 70
+paths:
+  database: data/db/monitor.sqlite
+  raw: data/raw
+  snapshots: data/snapshots
+
