@@ -1,0 +1,10 @@
+{
+  "status": "Success",
+  "message": "synthetic replay fixture",
+  "error": null,
+  "response": [
+    {"id": "fixture_match", "name": "Fixture Match Loan", "category": "Personal Loan", "lender": "Fixture Lender A", "status": "ACTIVE", "ranking": 1, "content": {"headline": "Personal Loan up to INR 5 lakh", "keyBenefits": ["Tenure up to 12 months"]}},
+    {"id": "fixture_difference", "name": "Fixture Difference Loan", "category": "Business Loan", "lender": "Fixture Lender B", "status": "ACTIVE", "ranking": 2, "content": {"headline": "Business Loan up to INR 5 lakh", "keyBenefits": ["Tenure up to 24 months"]}}
+  ]
+}
+

@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "synthetic": true,
+  "retrieved_at": "2026-09-19T00:00:00Z",
+  "product_ids": ["fixture_match", "fixture_difference"],
+  "captures": [
+    {
+      "capture_id": "replay-clickpe",
+      "source_id": "clickpe_catalogue",
+      "source_type": "clickpe_catalogue",
+      "url": "https://example.org/clickpe/products",
+      "media_type": "application/json",
+      "suffix": ".json",
+      "fixture": "feed.json",
+      "sha256": "ac05d939fca149f793b4e25ddb872d1f6bf9cbbc3bb21f4f7e909dd12a9a0681"
+    },
+    {
+      "capture_id": "replay-provider-match",
+      "source_id": "provider_match",
+      "source_type": "official_product",
+      "url": "https://example.org/providers/match",
+      "media_type": "text/html",
+      "suffix": ".html",
+      "fixture": "../provider/match.html",
+      "sha256": "ab70e7f3f512145aa30594cd9069819fa5471a41677f037307ac4f2ef860cc3d"
+    },
+    {
+      "capture_id": "replay-provider-difference",
+      "source_id": "provider_difference",
+      "source_type": "official_product",
+      "url": "https://example.org/providers/difference",
+      "media_type": "text/html",
+      "suffix": ".html",
+      "fixture": "../provider/difference.html",
+      "sha256": "f07c64311a00b1faaa76afb94864d88b4ed65f5fa729e4adef9c583c8689e71f"
+    }
+  ],
+  "mappings": [
+    {
+      "mapping_id": "fixture_match_mapping",
+      "product_id": "fixture_match",
+      "source_id": "provider_match",
+      "entity_id": "fixture_lender_a",
+      "role": "lender",
+      "programme": "fixture_match_programme",
+      "scope": "same_programme",
+      "review_state": "approved",
+      "confidence": 1,
+      "evidence_capture_id": "replay-provider-match",
+      "evidence_locator": "heading:Fixture Match Loan",
+      "rationale": "Synthetic same-programme mapping for offline replay tests only.",
+      "reviewed_by": "fixture-author",
+      "reviewed_at": "2026-09-19T00:00:00Z"
+    },
+    {
+      "mapping_id": "fixture_difference_mapping",
+      "product_id": "fixture_difference",
+      "source_id": "provider_difference",
+      "entity_id": "fixture_lender_b",
+      "role": "lender",
+      "programme": "fixture_difference_programme",
+      "scope": "same_programme",
+      "review_state": "approved",
+      "confidence": 1,
+      "evidence_capture_id": "replay-provider-difference",
+      "evidence_locator": "heading:Fixture Difference Loan",
+      "rationale": "Synthetic same-programme mapping for offline replay tests only.",
+      "reviewed_by": "fixture-author",
+      "reviewed_at": "2026-09-19T00:00:00Z"
+    }
+  ],
+  "provider_recipes": {
+    "provider_match": {
+      "version": "1",
+      "scope_heading": "Fixture Match Loan",
+      "expected_heading": "Fixture Match Loan",
+      "exclude_headings": [],
+      "fields": {
+        "loan_amount": {"label_pattern": "Loan amount", "value_pattern": "up to INR 5 lakh", "normalizer": "money"}
+      }
+    },
+    "provider_difference": {
+      "version": "1",
+      "scope_heading": "Fixture Difference Loan",
+      "expected_heading": "Fixture Difference Loan",
+      "exclude_headings": [],
+      "fields": {
+        "loan_amount": {"label_pattern": "Loan amount", "value_pattern": "up to INR 3 lakh", "normalizer": "money"}
+      }
+    }
+  }
+}
+
