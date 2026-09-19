@@ -1,0 +1,90 @@
+name: ClickPe monitor
+
+on:
+  workflow_dispatch:
+    inputs:
+      initialize_baseline:
+        description: Allow a new baseline when no prior state artifact exists
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: clickpe-monitor
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.12.3"
+      - name: Sync locked environment
+        run: uv sync --frozen --extra dev
+      - name: Locate prior successful monitor state
+        id: prior
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INITIALIZE: ${{ inputs.initialize_baseline }}
+        shell: bash
+        run: |
+          run_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/monitor.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].id // empty')"
+          echo "run_id=${run_id}" >> "${GITHUB_OUTPUT}"
+          if [ -z "${run_id}" ] && [ "${INITIALIZE}" != "true" ]; then
+            echo "No prior durable state exists; rerun with initialize_baseline=true." >&2
+            exit 1
+          fi
+      - name: Download prior state
+        if: steps.prior.outputs.run_id != ''
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: clickpe-monitor-state
+          path: .state-download
+          run-id: ${{ steps.prior.outputs.run_id }}
+          github-token: ${{ github.token }}
+      - name: Restore prior state
+        if: steps.prior.outputs.run_id != ''
+        shell: bash
+        run: |
+          uv run python scripts/restore.py --archive .state-download/state.zip --destination .restored
+          mkdir -p data/db data
+          cp .restored/database/monitor.sqlite data/db/monitor.sqlite
+          cp -R .restored/data/. data/
+      - name: Run live monitor
+        shell: bash
+        run: |
+          set +e
+          uv run python -m clickpe_pim run --mode live --config config.yaml --output-root .
+          code=$?
+          set -e
+          if [ "${code}" -ne 0 ] && [ "${code}" -ne 2 ]; then
+            exit "${code}"
+          fi
+      - name: Create consistent state archive
+        if: always() && hashFiles('data/db/monitor.sqlite') != ''
+        run: >-
+          uv run python scripts/backup.py
+          --db data/db/monitor.sqlite
+          --data-root data
+          --archive state.zip
+      - name: Upload durable state
+        if: always() && hashFiles('state.zip') != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: clickpe-monitor-state
+          path: state.zip
+          if-no-files-found: error
+          retention-days: 30
+
