@@ -3,7 +3,7 @@
   --cold-stock: #eef3f5;
   --source-white: #ffffff;
   --register-blue: #2f5bea;
-  --review-amber: #a65f00;
+  --review-amber: #8d5000;
   --verified-green: #176b55;
   --muted-ink: #50636b;
   --rule: color-mix(in srgb, var(--archive-ink) 24%, transparent);
@@ -226,7 +226,7 @@ select {
   overflow: hidden;
   border-block: 2px solid var(--archive-ink);
   background: var(--source-white);
-  grid-template-columns: minmax(0, 5fr) minmax(11.5rem, 2fr) minmax(0, 5fr);
+  grid-template-columns: minmax(0, 4fr) minmax(0, 3fr) minmax(0, 4fr);
 }
 
 .evidence-source,
@@ -573,7 +573,7 @@ dd {
   overflow-wrap: anywhere;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 820px) {
   .app-frame {
     display: block;
     padding-bottom: 4.5rem;

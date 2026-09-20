@@ -38,7 +38,7 @@ export function AppShell({ snapshot, activePath, children }: {
           </nav>
           <p className="rail-method">Read-only public evidence from one finalized run.</p>
         </aside>
-        <main id="main-content" className="workspace">{children}</main>
+        <main id="main-content" className="workspace" tabIndex={-1}>{children}</main>
       </div>
     </div>
   );
