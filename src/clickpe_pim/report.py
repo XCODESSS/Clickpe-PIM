@@ -35,11 +35,10 @@ def build_report(db_path: Path, evaluation: dict, output_dir: Path) -> Path:
         f"Held split: {labels.get('split', 'not measured')}. Numeric correctness: {labels.get('present_numeric_correct', 0)}/{labels.get('present_numeric_total', 0)} ({_metric(labels.get('present_numeric_accuracy'))}).", "",
         f"Reviewed useful-flag precision: {flags.get('useful_flags', 0)}/{flags.get('reviewed_flags', 0)} ({_metric(flags.get('precision'))}). Unreviewed flags: {flags.get('unreviewed_flags', 0)}.", "",
         "## History", "",
-        "One baseline only" if overview.get("runs", 0) < 2 else f"{overview.get('recent_changes', 0)} changes are recorded in the current reporting window.", "",
+        "One baseline only" if overview.get("runs", 0) < 2 else f"{overview.get('recent_changes', 0)} stored change events are recorded. The acceptance ledger determines whether the elapsed-time history gate is satisfied.", "",
         "## Limitations and actions", "",
         "Candidate mappings do not establish programme applicability. Synthetic replay results validate software behavior only and are excluded from real monitoring totals by default. Competitor coverage is outside this release.", "",
     ]
     path = output_dir / "report.md"
     path.write_text("\n".join(lines), encoding="utf-8")
     return path
-

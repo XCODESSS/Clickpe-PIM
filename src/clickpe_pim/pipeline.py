@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -133,7 +134,21 @@ def run_monitor(config_path: Path, *, mode: Literal["live", "replay"], replay_ma
         for spec, payload in payloads:
             captures[spec["source_id"]] = _capture_from_bytes(repo, raw_root, run_id, spec, payload, capture_time)
             bodies[spec["source_id"]] = payload
-            manifest_record["captures"].append({"capture_id": captures[spec["source_id"]].capture_id, "source_id": spec["source_id"], "sha256": captures[spec["source_id"]].sha256, "raw_path": captures[spec["source_id"]].raw_path})
+            capture = captures[spec["source_id"]]
+            raw_path = raw_root / str(capture.raw_path)
+            fixture = Path(os.path.relpath(raw_path, snapshot)).as_posix()
+            manifest_record["captures"].append({
+                "capture_id": capture.capture_id,
+                "source_id": capture.source_id,
+                "source_type": capture.source_type,
+                "url": capture.url,
+                "final_url": capture.final_url,
+                "media_type": capture.media_type,
+                "suffix": raw_path.suffix,
+                "fixture": fixture,
+                "sha256": capture.sha256,
+                "raw_path": capture.raw_path,
+            })
             manifest_record["source_parse_status"][spec["source_id"]] = "captured"
         catalogue_capture = captures["clickpe_catalogue"]
         feed = json.loads(bodies["clickpe_catalogue"])
@@ -178,6 +193,10 @@ def run_monitor(config_path: Path, *, mode: Literal["live", "replay"], replay_ma
                 repo.save_conflict(comparison, priority=priority(severity, importance, comparison.confidence, 0), severity=severity, at=capture_time)
         manifest_record["source_parse_status"] = {source_id: "ok" for source_id in captures}
         manifest_record["cohort_ids"] = cohort_ids
+        manifest_record["product_ids"] = cohort_ids
+        manifest_record["retrieved_at"] = capture_time.isoformat()
+        manifest_record["mappings"] = [item.model_dump(mode="json") for item in mappings]
+        manifest_record["provider_recipes"] = provider_recipes
         pending = snapshot.with_name(snapshot.name + ".pending")
         if pending.exists():
             shutil.rmtree(pending)

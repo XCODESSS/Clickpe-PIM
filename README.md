@@ -2,7 +2,7 @@
 
 ClickPe publishes loan-product information across a public catalogue and disclosure pages. The same product may also appear on a lender or intermediary website with different scope, timing, units, or wording. This project turns those public statements into traceable observations and neutral review items. A difference is not proof of an error or a regulatory violation.
 
-The repository currently delivers the offline-tested software release. It does **not** include a completed live 25-product study, approved human mappings, gold-label accuracy result, 24-hour history, PDF report, or demo video. Those acceptance items require live source review and human decisions; their status is recorded in `reports/release-1/acceptance.md`.
+The repository delivers the offline-tested software release plus a bounded public baseline captured on 2026-09-20. That run found 36 in-scope public feed records and froze a 25-product cohort; all 12 seed titles were reconciled against the rendered Personal Loans, Business Loans, and Loan Against Property catalogue pages. It does **not** include approved human programme mappings, a gold-label accuracy result, 24-hour history, a PDF report, or a demo video. Those acceptance items require independent review or elapsed time; their status is recorded in `reports/release-1/acceptance.md`.
 
 ## Architecture
 
@@ -59,6 +59,8 @@ Outputs include an SQLite database, immutable raw evidence, a versioned snapshot
 
 Live mode checks ClickPe's current robots policy, uses bounded HTTPS collection, and discovers the catalogue feed. It does not approve candidate provider mappings. Before treating a live run as a release, complete the mapping, source-terms, visual catalogue, label, history, and evidence review in the validation protocol.
 
+The frozen baseline run ID is `live_20260920_release`. Its local database, source bytes, and snapshots are ignored runtime artifacts. The committed cohort records the 25 selected native IDs and the catalogue capture hash; repeat runs must keep that cohort stable.
+
 ## Dashboard
 
 ```powershell
@@ -105,4 +107,3 @@ The backup uses SQLite's backup API, includes evidence referenced by finalized r
 - A first run is a baseline. A real removal needs two healthy observations at least 24 hours apart.
 
 See `docs/data-dictionary.md`, `docs/validation-protocol.md`, and `docs/runbook.md` for the detailed contracts.
-

@@ -18,6 +18,16 @@ def test_replay_is_deterministic_and_network_free(tmp_path, monkeypatch):
     assert first.comparisons == 2
     assert (tmp_path / "data/processed/products.parquet").exists()
 
+    frozen_manifest = tmp_path / "data/snapshots/fixture_r1/manifest.json"
+    reproduced = run_monitor(
+        Path("config.yaml"), mode="replay", replay_manifest=frozen_manifest,
+        output_root=tmp_path / "reproduced", run_id="fixture_r1_reproduced",
+    )
+    assert reproduced.products_discovered == first.products_discovered
+    assert reproduced.products_monitored == first.products_monitored
+    assert reproduced.observations == first.observations
+    assert reproduced.comparisons == first.comparisons
+
 
 def test_replay_rejects_tampered_hash(tmp_path):
     import json
@@ -35,4 +45,3 @@ def test_replay_rejects_tampered_hash(tmp_path):
     import pytest
     with pytest.raises(ValueError, match="hash mismatch"):
         run_monitor(Path("config.yaml"), mode="replay", replay_manifest=manifest, output_root=tmp_path / "out", run_id="bad")
-

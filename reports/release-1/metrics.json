@@ -1,0 +1,40 @@
+{
+  "cohort_products": 25,
+  "coverage_denominator": 25,
+  "coverage_numerator": 0,
+  "coverage_ratio": 0.0,
+  "evaluation": {
+    "flags": {
+      "precision": null,
+      "reviewed_flags": 0,
+      "unreviewed_flags": 1,
+      "useful_flags": 0
+    },
+    "labels": {
+      "abstention_rate": null,
+      "abstentions": 0,
+      "labels_total": 0,
+      "missing_correct": 0,
+      "missing_field_recall": null,
+      "missing_total": 0,
+      "per_field": {},
+      "present_numeric_accuracy": null,
+      "present_numeric_correct": 0,
+      "present_numeric_total": 0,
+      "present_numeric_wilson_95": null,
+      "split": "test",
+      "state_accuracy": null,
+      "state_correct": 0,
+      "state_total": 0
+    }
+  },
+  "failed_sources": 0,
+  "high_priority_items": 0,
+  "inventory_products": 36,
+  "recent_changes": 0,
+  "review_items": 1,
+  "run_id": "live_20260920_release",
+  "runs": 2,
+  "status": "complete",
+  "synthetic": false
+}

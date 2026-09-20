@@ -13,6 +13,30 @@ seed_ids:
   - lendingplate_pl
   - flexiloans_bl
   - lap_google_form
-product_ids: []
-capture_sha256: null
-
+product_ids:
+  - creditsea_pl
+  - kreditbuddha_pl
+  - brightloans_pl
+  - muthoot_emi_bl
+  - muthoot_daily_bl
+  - incred_pl
+  - moneydot_pl
+  - prefr_pl
+  - vivifi_pl
+  - lendingplate_pl
+  - flexiloans_bl
+  - lap_google_form
+  - ramfincorp_pl
+  - orrish_pl
+  - mymoneybazaar_pl
+  - b4salary_pl
+  - payme_pl
+  - cashmysalary_pl
+  - credme_pl
+  - kredtap_pl
+  - salarymantra_pl
+  - snappaisa_pl
+  - tezcredit_pl
+  - zenithloan_pl
+  - dhancash_pl
+capture_sha256: 4d2d8d294659088d23939cc0eba35cfc0e0fa03cba037d6f9f066575da9397dd
