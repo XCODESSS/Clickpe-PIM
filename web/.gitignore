@@ -6,3 +6,4 @@ out/
 .artifacts/
 playwright-report/
 test-results/
+*.tsbuildinfo

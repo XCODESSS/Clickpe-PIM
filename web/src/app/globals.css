@@ -471,6 +471,94 @@ dd {
   margin-top: 0;
 }
 
+.product-search {
+  display: grid;
+  gap: 0.4rem;
+  padding-block: 1rem;
+  border-block: 2px solid var(--archive-ink);
+  grid-template-columns: minmax(10rem, 0.7fr) minmax(15rem, 1fr) auto;
+  align-items: end;
+}
+
+.product-search h2,
+.product-search p {
+  margin: 0;
+}
+
+.product-search label {
+  grid-column: 2;
+  color: var(--muted-ink);
+  font-size: var(--step--2);
+  font-weight: 620;
+}
+
+.product-search input {
+  grid-column: 2;
+}
+
+.product-search .result-count {
+  grid-column: 3;
+  grid-row: 2;
+  padding-bottom: 0.6rem;
+}
+
+.mapping-register,
+.observation-register {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--archive-ink);
+}
+
+.mapping-register > h2,
+.observation-register > h2 {
+  margin-top: 0;
+}
+
+.mapping-row {
+  margin-bottom: 1rem;
+  padding: 0 1rem;
+  border: 1px solid var(--rule);
+  background: var(--source-white);
+}
+
+.field-group {
+  margin-top: 1.5rem;
+}
+
+.field-group > h3 {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--archive-ink);
+}
+
+.field-group > h3 span {
+  color: var(--muted-ink);
+  font-size: var(--step--1);
+  font-weight: 500;
+}
+
+.observation-record {
+  padding: 1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--source-white);
+}
+
+.observation-record > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.observation-record blockquote {
+  margin: 1rem 0;
+  font-family: "Source Serif 4 Variable", Georgia, serif;
+  font-size: var(--step-1);
+  line-height: 1.65;
+}
+
 .hash {
   overflow-wrap: anywhere;
 }
@@ -563,6 +651,22 @@ dd {
 
   .filter-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .product-search {
+    grid-template-columns: 1fr;
+  }
+
+  .product-search label,
+  .product-search input,
+  .product-search .result-count {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .observation-record > header,
+  .field-group > h3 {
+    display: grid;
   }
 
   .filter-grid button {
