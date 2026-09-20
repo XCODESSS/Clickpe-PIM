@@ -381,6 +381,96 @@ dd {
   font-weight: 650;
 }
 
+.filter-register {
+  display: grid;
+  gap: 0.8rem;
+  padding-block: 1rem;
+  border-block: 2px solid var(--archive-ink);
+}
+
+.filter-register h2,
+.result-count {
+  margin: 0;
+}
+
+.filter-grid {
+  display: grid;
+  align-items: end;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(8rem, 1fr)) auto;
+}
+
+.filter-grid label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted-ink);
+  font-size: var(--step--2);
+  font-weight: 620;
+}
+
+.filter-grid select,
+.filter-grid button,
+.product-search input {
+  min-height: 2.7rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--rule);
+  background: var(--source-white);
+}
+
+.filter-grid button {
+  cursor: pointer;
+  font-size: var(--step--1);
+  font-weight: 620;
+}
+
+.ledger-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--source-white);
+  font-size: var(--step--1);
+}
+
+.ledger-table th,
+.ledger-table td {
+  padding: 0.8rem 0.65rem;
+  border-right: 1px solid var(--soft-rule);
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ledger-table thead th {
+  background: var(--archive-ink);
+  color: var(--source-white);
+  font-size: var(--step--2);
+}
+
+.ledger-table td:first-child,
+.ledger-table thead th:first-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger-empty {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.detail-register {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--archive-ink);
+}
+
+.detail-register h2 {
+  margin-top: 0;
+}
+
 .hash {
   overflow-wrap: anywhere;
 }
@@ -469,6 +559,57 @@ dd {
   .run-register dl > div {
     border-right: 0;
     border-bottom: 1px solid var(--soft-rule);
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filter-grid button {
+    grid-column: 1 / -1;
+  }
+
+  .ledger-scroll {
+    overflow: visible;
+  }
+
+  .ledger-table,
+  .ledger-table tbody,
+  .ledger-table tr,
+  .ledger-table th,
+  .ledger-table td {
+    display: block;
+  }
+
+  .ledger-table thead {
+    position: absolute;
+    overflow: hidden;
+    width: 1px;
+    height: 1px;
+    clip: rect(0 0 0 0);
+  }
+
+  .ledger-table tr {
+    padding: 0.55rem 0;
+    border-bottom: 2px solid var(--archive-ink);
+  }
+
+  .ledger-table th,
+  .ledger-table td,
+  .ledger-table td:first-child {
+    display: grid;
+    padding: 0.45rem 0;
+    border: 0;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    text-align: left;
+  }
+
+  .ledger-table th::before,
+  .ledger-table td::before {
+    color: var(--muted-ink);
+    content: attr(data-label);
+    font-size: var(--step--2);
+    font-weight: 620;
   }
 }
 
