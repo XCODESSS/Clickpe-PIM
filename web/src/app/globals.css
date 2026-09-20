@@ -456,6 +456,16 @@ dd {
   font-variant-numeric: tabular-nums;
 }
 
+.change-ledger td:first-child,
+.change-ledger thead th:first-child,
+.provider-ledger thead th:first-child {
+  text-align: left;
+}
+
+.method-note {
+  font-weight: 650;
+}
+
 .ledger-empty {
   padding: 1.5rem 0;
   border-bottom: 1px solid var(--rule);
