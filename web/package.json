@@ -16,7 +16,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:visual": "playwright test e2e/visual.spec.ts"
+    "test:visual": "playwright test e2e/visual.spec.ts",
+    "audit:out": "node scripts/assert-deploy-output.mjs out",
+    "audit:vercel": "node scripts/assert-deploy-output.mjs .vercel/output"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "5.3.0",

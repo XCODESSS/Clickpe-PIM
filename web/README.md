@@ -11,6 +11,7 @@ The implementation uses Node 22.19.x with TypeScript 6.0.3, ESLint 9.39.5, and j
 ```powershell
 $env:PIM_UI_DEMO = "1"
 npm run build
+npm run audit:out
 npm run preview
 ```
 
@@ -26,3 +27,9 @@ npm run audit:out
 ```
 
 The raw database, review events, reviewer identities, notes, local evidence paths, and unselected run records must never appear in `out/` or `.vercel/output/`. Vercel linking, preview deployment, and production deployment each require explicit approval immediately before the action.
+
+## Deployment output audit
+
+Run `npm run audit:out` after every static build. The audit rejects database and environment filenames plus private reviewer fields, local Windows paths, snapshot environment names, and the fixture-only secret sentinel. It scans generated UTF-8 text without printing a matched secret value. Run `npm run audit:vercel` after `vercel build` and before any approved deployment.
+
+The first Vercel link and synthetic preview require approval because they create external project and deployment state. A non-synthetic preview or production deployment requires a separate approval and an explicitly selected finalized real run.
