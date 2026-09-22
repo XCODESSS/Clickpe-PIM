@@ -117,3 +117,40 @@ jobs:
           fi
 
           echo "No database files found in static output."
+
+      - name: Pull Vercel preview settings
+        working-directory: web
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+        run: |
+          npx vercel@59.23.2 pull \
+            --yes \
+            --environment=preview \
+            --token="$VERCEL_TOKEN"
+
+      - name: Verify real-data build environment
+        working-directory: web
+        shell: bash
+        run: |
+          test "${PIM_UI_DEMO}" = "0"
+          test -n "${PIM_EXPECTED_RUN_ID}"
+          test -f "${PIM_SNAPSHOT_PATH}"
+
+          echo "Real-data build environment is ready."
+          echo "Run: ${PIM_EXPECTED_RUN_ID}"
+
+      - name: Build Vercel preview output
+        working-directory: web
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+        run: |
+          npx vercel@59.23.2 build \
+            --token="$VERCEL_TOKEN"
+
+      - name: Audit Vercel output
+        working-directory: web
+        run: npm run audit:vercel
