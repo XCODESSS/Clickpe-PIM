@@ -79,7 +79,7 @@ jobs:
           print(f"Selected finalized run: {run_id}")
           PY
 
-            - name: Set up Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "22.19.0"
