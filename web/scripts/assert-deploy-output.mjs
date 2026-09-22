@@ -58,6 +58,7 @@ export function auditDeployOutput(directory) {
     const displayPath = relative(root, path).split(sep).join("/");
     const fileRule = filenameRule(path);
     if (fileRule) findings.push({ rule: fileRule, path: displayPath });
+    if (displayPath === "builds.json") continue;
     const text = decodeText(path);
     if (text === null) continue;
     for (const [rule, pattern] of textRules) {

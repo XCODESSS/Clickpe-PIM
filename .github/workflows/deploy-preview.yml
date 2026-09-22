@@ -1,0 +1,119 @@
+name: Deploy ClickPe preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      monitor_run_id:
+        description: GitHub Actions run ID of the successful ClickPe monitor run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Download monitor state
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: clickpe-monitor-state
+          path: .state-download
+          run-id: ${{ inputs.monitor_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Restore monitor database
+        shell: bash
+        run: |
+          python scripts/restore.py \
+            --archive .state-download/state.zip \
+            --destination .restored
+
+          mkdir -p data/db
+
+          cp \
+            .restored/database/monitor.sqlite \
+            data/db/monitor.sqlite
+
+      - name: Select latest finalized real run
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import sqlite3
+
+          db_path = "data/db/monitor.sqlite"
+
+          with sqlite3.connect(db_path) as db:
+              row = db.execute("""
+                  SELECT run_id
+                  FROM scrape_runs
+                  WHERE finished_at IS NOT NULL
+                    AND status IN ('complete', 'partial')
+                    AND synthetic = 0
+                  ORDER BY finished_at DESC
+                  LIMIT 1
+              """).fetchone()
+
+          if row is None:
+              raise SystemExit("No finalized non-synthetic monitor run found.")
+
+          run_id = row[0]
+
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
+              env.write(f"PIM_EXPECTED_RUN_ID={run_id}\n")
+              env.write(f"PIM_SNAPSHOT_PATH={os.path.abspath(db_path)}\n")
+              env.write("PIM_UI_DEMO=0\n")
+
+          print(f"Selected finalized run: {run_id}")
+          PY
+
+            - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22.19.0"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Prepare public snapshot
+        working-directory: web
+        run: npm run prepare:data
+
+      - name: Build static web app
+        working-directory: web
+        run: npm run build
+
+      - name: Audit static output
+        working-directory: web
+        run: npm run audit:out
+
+      - name: Verify no database files entered static output
+        working-directory: web
+        shell: bash
+        run: |
+          if find out -type f \( \
+            -name "*.sqlite" -o \
+            -name "*.sqlite-wal" -o \
+            -name "*.sqlite-shm" -o \
+            -name "*.db" \
+          \) | grep -q .; then
+            echo "Database file found in static output." >&2
+            exit 1
+          fi
+
+          echo "No database files found in static output."

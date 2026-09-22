@@ -16,3 +16,8 @@ reports/release-1/*.pdf
 reports/release-1/*.mp4
 reports/release-1/evaluation.json
 *.pending/
+
+.vercel
+.env*
+/.restored/
+/.state-download/
