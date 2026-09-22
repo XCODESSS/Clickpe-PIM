@@ -7,6 +7,19 @@ on:
         description: GitHub Actions run ID of the successful ClickPe monitor run
         required: true
         type: string
+      expected_run_id:
+        description: Exact finalized non-synthetic scrape_runs.run_id in the artifact
+        required: true
+        type: string
+      publish_preview:
+        description: Publish the audited output to the canonical preview project
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: clickpe-preview
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -15,6 +28,10 @@ permissions:
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
 
     steps:
       - name: Check out source
@@ -24,6 +41,26 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.12"
+
+      - name: Verify monitor artifact provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MONITOR_RUN_ID: ${{ inputs.monitor_run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$MONITOR_RUN_ID" =~ ^[0-9]+$ ]]
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${MONITOR_RUN_ID}" > monitor-run.json
+          python - <<'PY'
+          import json, os
+          with open('monitor-run.json', encoding='utf-8') as stream:
+              run = json.load(stream)
+          if (run['conclusion'] != 'success'
+                  or run['status'] != 'completed'
+                  or run['path'] != '.github/workflows/monitor.yml'
+                  or run['head_repository']['full_name'] != os.environ['GITHUB_REPOSITORY']):
+              raise SystemExit('Expected a successful monitor workflow run from this repository.')
+          PY
 
       - name: Download monitor state
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -46,37 +83,30 @@ jobs:
             .restored/database/monitor.sqlite \
             data/db/monitor.sqlite
 
-      - name: Select latest finalized real run
+      - name: Select requested finalized real run
+        env:
+          EXPECTED_RUN_ID: ${{ inputs.expected_run_id }}
         shell: bash
         run: |
           python - <<'PY'
           import os
           import sqlite3
+          from pathlib import Path
 
-          db_path = "data/db/monitor.sqlite"
-
-          with sqlite3.connect(db_path) as db:
-              row = db.execute("""
-                  SELECT run_id
-                  FROM scrape_runs
-                  WHERE finished_at IS NOT NULL
-                    AND status IN ('complete', 'partial')
-                    AND synthetic = 0
-                  ORDER BY finished_at DESC
-                  LIMIT 1
-              """).fetchone()
-
+          path = Path('data/db/monitor.sqlite').resolve()
+          run_id = os.environ['EXPECTED_RUN_ID']
+          if not run_id or '\n' in run_id or '\r' in run_id:
+              raise SystemExit('Expected run ID must be nonempty and single-line.')
+          with sqlite3.connect(path.as_uri() + '?mode=ro', uri=True) as db:
+              db.execute('PRAGMA query_only=ON')
+              row = db.execute('''SELECT run_id FROM scrape_runs
+                  WHERE run_id=? AND finished_at IS NOT NULL
+                  AND status IN ('complete','partial') AND synthetic=0''', (run_id,)).fetchone()
           if row is None:
-              raise SystemExit("No finalized non-synthetic monitor run found.")
-
-          run_id = row[0]
-
-          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
-              env.write(f"PIM_EXPECTED_RUN_ID={run_id}\n")
-              env.write(f"PIM_SNAPSHOT_PATH={os.path.abspath(db_path)}\n")
-              env.write("PIM_UI_DEMO=0\n")
-
-          print(f"Selected finalized run: {run_id}")
+              raise SystemExit('Selected finalized non-synthetic run was not found.')
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as stream:
+              stream.write(f'PIM_EXPECTED_RUN_ID={run_id}\n')
+              stream.write(f'PIM_SNAPSHOT_PATH={path}\nPIM_UI_DEMO=0\n')
           PY
 
       - name: Set up Node.js
@@ -90,50 +120,56 @@ jobs:
         working-directory: web
         run: npm ci
 
-      - name: Prepare public snapshot
+      - name: Lint web app
         working-directory: web
-        run: npm run prepare:data
+        run: npm run lint
 
-      - name: Build static web app
+      - name: Test web app
         working-directory: web
-        run: npm run build
+        run: npm test
 
-      - name: Audit static output
-        working-directory: web
-        run: npm run audit:out
-
-      - name: Verify no database files entered static output
-        working-directory: web
+      - name: Verify canonical Vercel credentials
         shell: bash
         run: |
-          if find out -type f \( \
-            -name "*.sqlite" -o \
-            -name "*.sqlite-wal" -o \
-            -name "*.sqlite-shm" -o \
-            -name "*.db" \
-          \) | grep -q .; then
-            echo "Database file found in static output." >&2
-            exit 1
-          fi
+          set -euo pipefail
+          test -n "$VERCEL_TOKEN"
+          test "$VERCEL_ORG_ID" = "team_p0zbRpUBhRhAYkbD4sISIQVa"
+          test "$VERCEL_PROJECT_ID" = "prj_pDWOySkP10wr6iEyVY69CkNVeLok"
 
-          echo "No database files found in static output."
-
+      # All Vercel CLI commands run at repository root. The project selects web.
       - name: Pull Vercel preview settings
-        working-directory: web
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+        shell: bash
         run: |
-          npx vercel@59.23.2 pull \
+          npx --yes vercel@59.23.2 pull \
             --yes \
             --environment=preview \
             --token="$VERCEL_TOKEN"
 
-      - name: Verify real-data build environment
-        working-directory: web
+      - name: Verify pulled Vercel project settings
         shell: bash
         run: |
+          python - <<'PY'
+          import json, os
+          with open('.vercel/project.json', encoding='utf-8') as stream:
+              project = json.load(stream)
+          for name, expected in (
+              ('projectId', os.environ['VERCEL_PROJECT_ID']),
+              ('orgId', os.environ['VERCEL_ORG_ID']),
+          ):
+              if project.get(name) != expected:
+                  raise SystemExit(f'Vercel setting mismatch: {name}')
+          settings = project.get('settings') or {}
+          for name, expected in (
+              ('rootDirectory', 'web'), ('framework', 'nextjs'), ('nodeVersion', '22.x'),
+          ):
+              if settings.get(name) != expected:
+                  raise SystemExit(f'Vercel setting mismatch: {name}')
+          PY
+
+      - name: Verify real-data build environment
+        shell: bash
+        run: |
+          set -euo pipefail
           test "${PIM_UI_DEMO}" = "0"
           test -n "${PIM_EXPECTED_RUN_ID}"
           test -f "${PIM_SNAPSHOT_PATH}"
@@ -142,15 +178,82 @@ jobs:
           echo "Run: ${PIM_EXPECTED_RUN_ID}"
 
       - name: Build Vercel preview output
-        working-directory: web
+        shell: bash
+        run: npx --yes vercel@59.23.2 build --token="$VERCEL_TOKEN"
+
+      - name: Verify built snapshot selection
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+          EXPECTED_RUN_ID: ${{ inputs.expected_run_id }}
+        shell: bash
         run: |
-          npx vercel@59.23.2 build \
-            --token="$VERCEL_TOKEN"
+          python - <<'PY'
+          import json, os
+          with open('web/.cache/public-snapshot.json', encoding='utf-8') as stream:
+              snapshot = json.load(stream)
+          run = snapshot['run']
+          if run['runId'] != os.environ['EXPECTED_RUN_ID'] or run['synthetic'] is not False:
+              raise SystemExit('Built snapshot must match the requested non-synthetic run.')
+          PY
+
+      - name: Audit static output
+        working-directory: web
+        run: npm run audit:out
 
       - name: Audit Vercel output
-        working-directory: web
-        run: npm run audit:vercel
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f .vercel/output/config.json
+          test -f .vercel/output/static/index.html
+          node web/scripts/assert-deploy-output.mjs .vercel/output
+
+      - name: Verify no database files entered deployment output
+        shell: bash
+        run: |
+          set -euo pipefail
+          database_files=$(find web/out .vercel/output -type f \( \
+            -iname "*.sqlite" -o \
+            -iname "*.sqlite-wal" -o \
+            -iname "*.sqlite-shm" -o \
+            -iname "*.db" \
+          \))
+          if [[ -n "$database_files" ]]; then
+            echo "Database file found in deployment output." >&2
+            exit 1
+          fi
+          echo "No database files found in deployment output."
+
+      - name: Record validation summary
+        if: ${{ always() }}
+        env:
+          MONITOR_RUN_ID: ${{ inputs.monitor_run_id }}
+          EXPECTED_RUN_ID: ${{ inputs.expected_run_id }}
+          PUBLISH_PREVIEW: ${{ inputs.publish_preview }}
+          VALIDATION_RESULT: ${{ job.status }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import html, os
+          fields = (
+              ('Source commit', os.environ['GITHUB_SHA']),
+              ('Monitor Actions run ID', os.environ['MONITOR_RUN_ID']),
+              ('Selected SQLite run ID', os.environ['EXPECTED_RUN_ID']),
+              ('Validation result', os.environ['VALIDATION_RESULT']),
+          )
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as stream:
+              for label, value in fields:
+                  stream.write(f'{label}: <code>{html.escape(value)}</code><br>\n')
+              if os.environ['PUBLISH_PREVIEW'] != 'true':
+                  stream.write('\nValidation only: publication was not requested.\n')
+              else:
+                  stream.write('\nPreview publication requested; permitted only after all validation passes.\n')
+          PY
+
+      - name: Publish audited preview
+        if: ${{ success() && inputs.publish_preview }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          url=$(npx --yes vercel@59.23.2 deploy --prebuilt --yes --token="$VERCEL_TOKEN")
+          [[ "$url" == https://*.vercel.app ]]
+          printf 'Preview: %s\nRun: %s\nCommit: %s\n' "$url" "$PIM_EXPECTED_RUN_ID" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"

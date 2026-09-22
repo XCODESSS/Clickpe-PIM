@@ -1,0 +1,2 @@
+# Replay captures are byte-hashed evidence; never convert checkout line endings.
+tests/fixtures/** -text
