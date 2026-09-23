@@ -128,13 +128,35 @@ jobs:
         working-directory: web
         run: npm test
 
-      - name: Verify canonical Vercel credentials
+      - name: Verify Vercel project access
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$VERCEL_TOKEN"
-          test "$VERCEL_ORG_ID" = "team_p0zbRpUBhRhAYkbD4sISIQVa"
-          test "$VERCEL_PROJECT_ID" = "prj_pDWOySkP10wr6iEyVY69CkNVeLok"
+
+          status=$(curl -sS \
+            -o vercel-project-response.json \
+            -w "%{http_code}" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID")
+
+          if [[ "$status" != "200" ]]; then
+            echo "Vercel project access failed with HTTP $status"
+
+            python - <<'PY'
+          import json
+
+          with open("vercel-project-response.json", encoding="utf-8") as f:
+              data = json.load(f)
+
+          error = data.get("error", {})
+          print("Vercel error code:", error.get("code", "unknown"))
+          print("Vercel error message:", error.get("message", "unknown"))
+          PY
+
+            exit 1
+          fi
+
+          echo "Vercel token can access the configured project."
 
       # All Vercel CLI commands run at repository root. The project selects web.
       - name: Pull Vercel preview settings
