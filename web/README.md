@@ -21,7 +21,8 @@ A real build requires both `PIM_SNAPSHOT_PATH` and `PIM_EXPECTED_RUN_ID`. The se
 
 ```powershell
 $env:PIM_SNAPSHOT_PATH = (Resolve-Path '..\data\db\monitor.sqlite').Path
-$env:PIM_EXPECTED_RUN_ID = 'live_20260920_release'
+$env:PIM_UI_DEMO = "0"
+$env:PIM_EXPECTED_RUN_ID = Read-Host 'Exact finalized non-synthetic run ID in this database'
 npm run build
 npm run audit:out
 ```
@@ -30,6 +31,28 @@ The raw database, review events, reviewer identities, notes, local evidence path
 
 ## Deployment output audit
 
-Run `npm run audit:out` after every static build. The audit rejects database and environment filenames plus private reviewer fields, local Windows paths, snapshot environment names, and the fixture-only secret sentinel. It scans generated UTF-8 text without printing a matched secret value. Run `npm run audit:vercel` after `vercel build` and before any approved deployment.
+Run `npm run audit:out` from `web` after every static build. The audit rejects database and environment filenames plus private reviewer fields, local Windows paths, snapshot environment names, and the fixture-only secret sentinel. It scans generated UTF-8 text without printing a matched secret value.
 
-The first Vercel link and synthetic preview require approval because they create external project and deployment state. A non-synthetic preview or production deployment requires a separate approval and an explicitly selected finalized real run.
+## Manual real-data preview
+
+The canonical target is the existing `clickpe-pim-xotw` project, with root directory `web`, Next.js, and Node 22.x. Root and `web` Vercel configuration disable automatic Git deployments: a source checkout alone does not contain the monitor database. The other existing projects are retained; their remote configuration still needs verification.
+
+Run all pinned Vercel CLI commands (`vercel@59.23.2 pull`, `build`, and `deploy --prebuilt`) from the **repository root**, and npm commands from **web**. With the configured project root, the CLI writes the deployment artifact to root `.vercel/output`. Audit that exact directory from the repository root:
+
+```powershell
+node web/scripts/assert-deploy-output.mjs .vercel/output
+```
+
+The existing `npm run audit:vercel` script checks `web/.vercel/output` relative to `web`; it is not the audit command for this workflow's root output.
+
+The `Deploy ClickPe preview` workflow accepts three manual inputs:
+
+| Input | Meaning |
+|---|---|
+| `monitor_run_id` | Numeric Actions ID of a successful monitor workflow with an available state artifact |
+| `expected_run_id` | Exact finalized non-synthetic SQLite `scrape_runs.run_id` in that artifact |
+| `publish_preview` | Defaults to `false`; enable only for an authorized preview publication |
+
+Validation restores the checksum-verified artifact, checks the exact run and project settings, builds once through Vercel, verifies the projected run, and audits both static and deployment output. A failed check prevents publication. Even validation-only execution needs the Vercel credentials and project settings; it is not the secret-free frontend CI job.
+
+See [the preview runbook](../docs/runbooks/vercel-preview.md) for external setup and verification. Pushing the implementation, changing project settings, and first preview publication are separate authorization milestones. Production publication and promotion are outside this procedure.
