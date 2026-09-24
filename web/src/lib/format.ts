@@ -29,7 +29,10 @@ export function formatValue(evidence: EvidenceView): string {
   if (value.options.length) return value.options.join(", ");
   const bounds = [value.lower, value.upper].filter((part): part is string => part !== null);
   const joined = bounds.length === 2 ? `${bounds[0]}–${bounds[1]}` : bounds[0] ?? "Unknown";
-  return [joined, value.unit, value.period !== "unknown" ? value.period : null]
+  const qualifier = value.qualifier === "exact" || value.qualifier === "range"
+    ? null
+    : value.qualifier === "up_to" ? "Up to" : formatField(value.qualifier);
+  return [value.approximate ? "Approximately" : null, qualifier, joined, value.unit, value.period !== "unknown" ? value.period : null]
     .filter(Boolean)
     .join(" ");
 }

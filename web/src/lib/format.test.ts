@@ -35,6 +35,22 @@ function evidence(overrides: Partial<EvidenceView> = {}): EvidenceView {
 }
 
 describe("display-only formatters", () => {
+  it.each([
+    ["up_to", null, "120000.0", false, "Up to 120000.0 INR"],
+    ["from", "0", null, false, "From 0 INR"],
+    ["range", "100", "200", false, "100–200 INR"],
+    ["exact", "100", null, true, "Approximately 100 INR"],
+    ["up_to", null, "100", true, "Approximately Up to 100 INR"],
+    ["conditional", "100", null, false, "Conditional 100 INR"],
+    ["policy", "100", null, false, "Policy 100 INR"],
+  ])("preserves %s numeric semantics", (qualifier, lower, upper, approximate, expected) => {
+    expect(formatValue(evidence({ value: { ...evidence().value!, qualifier, lower, upper, approximate } }))).toBe(expected);
+  });
+
+  it.each(["policy", "conditional"])("preserves stored %s text", (qualifier) => {
+    expect(formatValue(evidence({ value: { ...evidence().value!, qualifier, text: "Subject to lender policy" } }))).toBe("Subject to lender policy");
+  });
+
   it("keeps stored zero, false, and unknown distinct", () => {
     expect(formatValue(evidence())).toBe("0 INR");
     expect(formatValue(evidence({ value: { ...evidence().value!, lower: null, kind: "boolean", boolean: false, unit: null } }))).toBe("No");
