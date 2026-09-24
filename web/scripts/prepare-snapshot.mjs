@@ -138,13 +138,15 @@ function prepareReal(snapshotPath, expectedRunId) {
     const changeRows = db.prepare(`
       SELECT record_json FROM changes
       WHERE product_id IN (SELECT product_id FROM product_snapshots WHERE run_id=?)
-      ORDER BY detected_at DESC,change_id
-    `).all(expectedRunId);
+        AND julianday(detected_at) <= julianday(?)
+      ORDER BY julianday(detected_at) DESC,change_id
+    `).all(expectedRunId, run.finished_at);
     const finalizedRuns = Number(db.prepare(`
       SELECT COUNT(*) AS finalized_runs
       FROM scrape_runs
       WHERE finished_at IS NOT NULL AND status IN ('complete','partial') AND synthetic=0
-    `).get().finalized_runs);
+        AND julianday(finished_at) <= julianday(?)
+    `).get(run.finished_at).finalized_runs);
 
     const rawProducts = productRows.map((row) => json(row.record_json, "product"));
     const rawMappings = mappingRows.map((row) => json(row.record_json, "mapping"));
